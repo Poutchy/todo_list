@@ -2,7 +2,7 @@ use color_eyre::Result;
 
 mod app;
 mod ui;
-mod utils;
+mod model;
 
 use crate::app::App;
 

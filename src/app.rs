@@ -4,9 +4,9 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 use std::char;
 
-use crate::utils::{
+use crate::model::{
     app_state::State, edit_state::CurrentlyEditing, item::TodoItem, list_items::TodoList, status::Status
-}
+};
 
 pub struct App {
     pub application_state: State,
@@ -81,28 +81,38 @@ impl App {
             State::Valid => {
                 match key.code {
                     KeyCode::Enter | KeyCode::Char('y') => self.save_edit(),
-                    KeyCode::Esc | KeyCode::Char('n') => self.cancel_edit(),
-                    KeyCode::Char('e') => self.quit_validation(),
+                    KeyCode::Esc | KeyCode::Char('n') => self.quit_edit(),
+                    KeyCode::Char('e') => self.start_editing(),
                     _ => {},
                 }
             },
         }
     }
 
-    fn cancel_edit(&mut self) {}
+    fn edit(&mut self, value: char) {
+        if let Some(edit_mode) = &self.currently_editing {
+            match edit_mode {
+                CurrentlyEditing::Name => self.name_input.push(value),
+                CurrentlyEditing::Description => self.description_input.push(value),
+            };
+        } 
+    }
 
-    fn edit(&mut self, value: char) {}
+    fn quit_edit(&mut self) {
+        self.name_input = String::new();
+        self.description_input = String::new();
 
-    fn quit_edit(&mut self) {}
-    
-    fn quit_validation(&mut self) {}
-    
+        self.application_state = State::Look;
+    }
+
     fn save_edit(&mut self) {
         let name = self.name_input.clone();
         let description = self.description_input.clone();
 
         let new_item = TodoItem::new(Status::Todo, &name, &description);
         self.todo_list.push(new_item);
+
+        self.quit_edit();
     }
     
     fn select_none(&mut self) {
@@ -168,7 +178,7 @@ impl App {
     }
 
     fn validate_edit(&mut self) {
-
+        self.application_state = State::Valid;
     }
 }
 

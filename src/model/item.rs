@@ -1,4 +1,4 @@
-use crate::utils::status::Status;
+use crate::model::status::Status;
 
 #[derive(Debug)]
 pub struct TodoItem {
@@ -8,7 +8,7 @@ pub struct TodoItem {
 }
 
 impl TodoItem {
-    pub(in crate::utils) fn new(status: Status, todo: &str, info: &str) -> Self {
+    pub fn new(status: Status, todo: &str, info: &str) -> Self {
         Self {
             status,
             todo: todo.to_string(),

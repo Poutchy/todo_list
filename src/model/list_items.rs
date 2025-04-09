@@ -1,8 +1,10 @@
 use ratatui::widgets::ListState;
 
 
-use crate::utils::item::TodoItem;
-use crate::utils::status::Status;
+use crate::model::{
+    item::TodoItem,
+    status::Status,
+};
 
 pub struct TodoList {
     pub items: Vec<TodoItem>,
