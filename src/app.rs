@@ -74,7 +74,7 @@ impl App {
                     KeyCode::Esc => self.quit_edit(),
                     KeyCode::Tab => self.toggle_edit(),
                     KeyCode::Backspace => self.remove(),
-                    KeyCode::Enter => self.validate_edit(),
+                    KeyCode::Enter => self.save_edit(),
                     _ => {},
                 }
             },
@@ -102,7 +102,7 @@ impl App {
         self.name_input = String::new();
         self.description_input = String::new();
 
-        self.application_state = State::Look;
+        self.toggle_state();
     }
 
     fn save_edit(&mut self) {
@@ -137,7 +137,7 @@ impl App {
 
     // Start the edition of a new task
     fn start_editing(&mut self) {
-        self.toggle_status();
+        self.toggle_state();
         self.toggle_edit();
     }
 
@@ -150,6 +150,13 @@ impl App {
             };
         } else {
             self.currently_editing = Some(CurrentlyEditing::Name);
+        }
+    }
+
+    fn toggle_state(&mut self) {
+        match self.application_state {
+            State::Look => self.application_state = State::Edit,
+            _ => self.application_state = State::Look,
         }
     }
     
