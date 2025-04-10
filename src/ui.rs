@@ -1,8 +1,23 @@
+use std::rc::Rc;
+
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Stylize};
-use ratatui::style::{Modifier, Style};
-use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
+use ratatui::layout::{
+    Constraint,
+    Direction,
+    Layout,
+    Rect
+};
+use ratatui::style::{
+    Color,
+    Stylize,
+    Modifier,
+    Style,
+    palette::tailwind::{
+        BLUE,
+        GREEN,
+        SLATE
+    },
+};
 use ratatui::symbols;
 use ratatui::text::Line;
 use ratatui::widgets::{
@@ -11,10 +26,13 @@ use ratatui::widgets::{
 };
 
 use crate::app::App;
-use crate::utils::{
+use crate::model::{
     item::TodoItem,
     status::Status,
+    app_state::State,
+    edit_state::CurrentlyEditing,
 };
+use crate::utils::ui_help::centered_rect;
 
 pub const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
 pub const NORMAL_ROW_BG: Color = SLATE.c950;
@@ -34,10 +52,19 @@ impl Widget for &mut App {
         .areas(area);
         let [list_area, item_area] =
             Layout::vertical([Constraint::Fill(1), Constraint::Fill(1)]).areas(main_area);
+        let popup_area = centered_rect(60, 25, area);
         App::render_header(header_area, buf);
         App::render_footer(footer_area, buf);
-        self.render_list(list_area, buf);
-        self.render_selected_item(item_area, buf);
+        match self.application_state {
+            State::Edit => {
+                self.render_popup(popup_area, buf);
+            },
+            State::Look => {
+                self.render_list(list_area, buf);
+                self.render_selected_item(item_area, buf);
+            },
+            State::Valid => {},
+        }
     }
 }
 
@@ -87,6 +114,50 @@ impl App {
         // same method name `render`.
         StatefulWidget::render(list, area, buf, &mut self.todo_list.state);
     }
+
+    fn render_popup(&mut self, area: Rect, buf: &mut Buffer) {
+        Block::default()
+            .title("Enter a new name-description pair")
+            .borders(Borders::NONE)
+            .style(TODO_HEADER_STYLE)
+            .render(area, buf);
+
+        let popup_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .margin(1)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(area);
+
+        self.render_popup_text(popup_chunks, buf);
+    }
+
+    fn render_popup_text(&mut self, area: Rc<[Rect]>, buf: &mut Buffer) {
+        if let Some(editing) = &self.currently_editing {
+            let mut name_block = Block::default()
+                .title("Name")
+                .borders(Borders::ALL);
+
+            let mut description_block = Block::default()
+                .title("Description")
+                .borders(Borders::ALL);
+    
+            let active_style = Style::default().bg(ALT_ROW_BG_COLOR).fg(TEXT_FG_COLOR);
+
+            match editing {
+                CurrentlyEditing::Name => name_block = name_block.style(active_style),
+                CurrentlyEditing::Description => description_block = description_block.style(active_style),
+            };
+
+            Paragraph::new(self.name_input.clone())
+                .block(name_block)
+                .render(area[0], buf);
+
+            Paragraph::new(self.description_input.clone())
+                .block(description_block)
+                .render(area[1], buf);
+        }
+    }
+
     
     fn render_selected_item(&self, area: Rect, buf: &mut Buffer) {
         // We get the info depending on the item's state.
